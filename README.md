@@ -1,25 +1,105 @@
-# Autonomous Customer Support Copilot
+# CloudDesk Support Copilot
 
-Nova is the CloudDesk Customer Support Copilot. This local FastAPI + Streamlit prototype uses RAG over a fictional CloudDesk knowledge base, confidence-aware intent routing, SQLite interaction logs, feedback, and persistent escalation records.
+Nova is a local customer-support assistant for the fictional CloudDesk SaaS product. It combines a FastAPI service, Streamlit chat interface, retrieval-augmented answers, intent routing, feedback collection, and escalation tracking.
 
-## Quick start
+## What it does
 
-1. Use Python 3.11–3.13, create a virtual environment, and run `python -m pip install -r requirements.txt`. Python 3.14 is not yet a safe choice for all ML dependencies in this project.
-2. Copy `.env.example` to `.env`. An `OPENAI_API_KEY` is optional; without one, a local extractive fallback supports demos.
-3. Build the knowledge index with `python scripts/run_ingestion.py`.
-4. Start the API with `uvicorn backend.main:app --reload`.
-5. In another terminal run `streamlit run frontend/app.py`.
+- Answers questions using the curated CloudDesk knowledge base.
+- Detects common support intents such as password resets, billing, integrations, API issues, and dashboard problems.
+- Escalates safety-sensitive or low-confidence requests instead of inventing an answer.
+- Records conversations, feedback, and escalation records in a local SQLite database.
+- Shows support metrics including resolution, escalation, feedback, and intent distribution.
 
-Use `/docs` for API documentation, `/health` for status, and `/metrics` for real interaction counts. Add TXT, Markdown, or PDF material to `knowledge_base/` and rerun ingestion whenever it changes. `OPENAI_API_KEY` is optional: without it, Nova returns only retrieved guidance and will not invent an answer.
+## Requirements
+
+- Python 3.11, 3.12, or 3.13
+- `pip`
+
+An OpenAI API key is optional. Without one, Nova uses its local retrieval-based fallback for demonstrations.
+
+## Run locally
+
+1. Clone the repository and enter the project directory.
+2. Create and activate a virtual environment.
+3. Install dependencies:
+
+   ```bash
+   python -m pip install -r requirements.txt
+   ```
+
+4. Create your local environment file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   On Windows PowerShell, use `Copy-Item .env.example .env` instead.
+
+5. Build or refresh the knowledge index:
+
+   ```bash
+   python scripts/run_ingestion.py
+   ```
+
+6. Start the API in one terminal:
+
+   ```bash
+   uvicorn backend.main:app --reload
+   ```
+
+7. Start the chat interface in a second terminal:
+
+   ```bash
+   streamlit run frontend/app.py
+   ```
+
+Open the interface at `http://localhost:8501`. API documentation is available at `http://localhost:8000/docs`.
+
+## Configuration
+
+Copy `.env.example` to `.env` to customize the application. The most useful settings are:
+
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | Optional key for generated answers. |
+| `OPENAI_MODEL` | Model to use when an API key is present. |
+| `DATABASE_URL` | SQLite database location. |
+| `RETRIEVAL_SCORE_THRESHOLD` | Minimum retrieval confidence before an escalation is created. |
+| `TOP_K` | Number of knowledge-base passages retrieved per request. |
+
+## API endpoints
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /chat` | Submit a customer-support question. |
+| `POST /feedback` | Mark an answer helpful or not helpful. |
+| `GET /health` | Check the API status. |
+| `GET /metrics` | View support-quality and routing metrics. |
+| `GET /docs` | Open interactive API documentation. |
+
+## Knowledge base
+
+The `knowledge_base/` directory contains the support material Nova may use. Add TXT, Markdown, or PDF documents there and run the ingestion command again to update retrieval.
 
 ## Safety behavior
 
-Suspected account compromise and possible service outages are always escalated. Billing disputes, refund requests requiring approval, repeated failed troubleshooting, and low-quality retrieval are also escalated. An escalation is only reported after its SQLite record is saved.
+Nova always escalates suspected account compromise and potential service outages. It also escalates billing disputes requiring approval, repeated failed troubleshooting, and questions where the retrieved knowledge is insufficient. It reports an escalation only after saving the local record.
 
-## Feedback and metrics
+## Development
 
-The interface sends Helpful / Not helpful feedback to `/feedback`. `/metrics` reports total and resolved conversations, escalations, response-time average, retrieval failures, feedback score, and intent distribution from stored interactions. Feedback is for support-quality review; it does not trigger automatic model retraining.
+Run the test suite with:
 
-## Safety and escalation
+```bash
+pytest
+```
 
-The generation prompt permits answers only from retrieved context and treats instructions embedded in documents as untrusted. Low retrieval similarity or an insufficient-information response creates a pending escalation. The query, response, confidence, and sources are persisted in SQLite.
+## Project structure
+
+```text
+backend/         FastAPI routes, services, schemas, and database models
+frontend/        Streamlit chat interface
+knowledge_base/  CloudDesk support content
+rag/             Ingestion, embeddings, and retrieval logic
+scripts/         Utility scripts, including knowledge ingestion
+tests/           Automated behavior tests
+```
