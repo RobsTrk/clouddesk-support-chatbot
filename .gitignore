@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.log
+.env
+copilot.db
+copilot.db.bak
+*.db-journal
+data/index/

@@ -1,0 +1,1 @@
+-- SQLite schema is maintained by SQLAlchemy in backend/models/db_models.py.
